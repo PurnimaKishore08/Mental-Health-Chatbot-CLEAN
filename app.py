@@ -1,41 +1,43 @@
 import streamlit as st
-from sentiment import analyze_sentiment
-from chatbot_response import get_chatbot_reply
-from datetime import datetime
 import json
-from dotenv import load_dotenv
-import os
+from datetime import datetime
+from chatbot_response import get_chatbot_reply
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
-load_dotenv()
-
-# Load wellness tips
-with open('data/wellness_tips.json', 'r') as f:
+# Load wellness tips from JSON
+with open("data/wellness_tips.json", "r", encoding="utf-8") as f:
     tips = json.load(f)
 
-st.set_page_config(page_title="Mental Health Chatbot", layout="centered")
+analyzer = SentimentIntensityAnalyzer()
+
 st.title("🧠 AI Mental Health Chatbot")
-st.markdown("Hello! I'm here to listen and support you. Just type how you're feeling.")
+st.write("Hello! I'm here to listen and support you. Just type how you're feeling.")
 
-# User input
-user_input = st.text_area("📝 Your Message", placeholder="Type your thoughts here...")
+user_input = st.text_input("📝 Your Message")
 
-if st.button("💬 Submit"):
-    if user_input.strip():
-        # Analyze sentiment
-        sentiment = analyze_sentiment(user_input)
-        st.write(f"**Detected Emotion:** {sentiment}")
-
-        # Get chatbot reply
-        reply = get_chatbot_reply(user_input, sentiment)
-        st.markdown(f"🤖 **Chatbot:** {reply}")
-
-        # Suggest tips if negative
-        if sentiment in ["Negative", "Very Negative"]:
-            st.markdown("🌿 **Wellness Tip:**")
-            st.info(tips.get(sentiment.lower(), "Take a deep breath. You got this!"))
-
-        # Save journaling
-        with open("journal.txt", "a") as f:
-            f.write(f"{datetime.now()}\nUser: {user_input}\nBot: {reply}\n\n")
+if user_input:
+    sentiment_score = analyzer.polarity_scores(user_input)["compound"]
+    if sentiment_score >= 0.05:
+        sentiment = "Positive"
+    elif sentiment_score <= -0.05:
+        sentiment = "Negative"
     else:
-        st.warning("Please enter something.")
+        sentiment = "Neutral"
+
+    st.write(f"Detected Emotion: {sentiment}")
+
+    # Get response
+    reply = get_chatbot_reply(user_input)
+
+    st.markdown(f"**🤖 Chatbot:** {reply}")
+
+    # Show a wellness tip
+    if isinstance(tips, dict):
+        tip = tips.get(sentiment.lower(), "Take a deep breath. You got this!")
+        st.info(f"🌿 Wellness Tip:\n\n{tip}")
+    elif isinstance(tips, list):
+        st.info(f"🌿 Wellness Tip:\n\n{tips[0]}")  # fallback if list
+
+    # Log conversation
+    with open("chat_logs.txt", "a", encoding="utf-8") as f:
+        f.write(f"{datetime.now()}\nUser: {user_input}\nBot: {reply}\n\n")
