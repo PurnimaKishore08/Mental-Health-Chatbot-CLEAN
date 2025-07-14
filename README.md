@@ -39,3 +39,5 @@ Mental health is an essential aspect of overall well-being, yet many individuals
 - 🎨 **Simple & Friendly UI**: Clean interface using Streamlit.
 
 ---
+## Live Demo 
+🔗 https://mental-health-chatbot-clean-zperyg3zfbfh3bq5vdkzhm.streamlit.app
